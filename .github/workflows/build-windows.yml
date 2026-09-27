@@ -16,23 +16,23 @@ jobs:
         with:
           node-version: 20
 
-      - name: Setup MSVC (Visual Studio C++ toolchain)
-        uses: ilammy/msvc-dev-cmd@v1
-
       - name: Install dependencies (skip native build scripts)
         run: npm install --force --ignore-scripts
 
-      - name: Build Windows installer
+      - name: Build Windows installer (JS only, no native compile)
         run: npm run build:win
         env:
           npm_config_build_from_source: "false"
-          npm_config_msvs_version: "2022"
           npm_config_arch: "x64"
 
       - name: Upload EXE artifact
         uses: actions/upload-artifact@v4
         with:
           name: jarvis-windows-installer
-          path: release/*.exe
+          path: |
+            release/*.exe
+            release/*.blockmap
+            release/*.yml
+            dist/*.exe
           if-no-files-found: warn
           retention-days: 14
