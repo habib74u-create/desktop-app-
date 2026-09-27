@@ -1,36 +1,163 @@
+# .github/workflows/build-windows.yml
 name: Build Windows EXE
 
 on:
   workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish to GitHub Releases?'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+env:
+  NODE_VERSION: '20.x'
+  ELECTRON_CACHE: ${{ github.workspace }}/.cache/electron
+  ELECTRON_BUILDER_CACHE: ${{ github.workspace }}/.cache/electron-builder
 
 jobs:
   build:
+    name: Build Windows installer
     runs-on: windows-latest
+    timeout-minutes: 60
+
     steps:
+      # ---------------------------------------------------------------
+      # 1. Checkout
+      # ---------------------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
 
+      # ---------------------------------------------------------------
+      # 2. Toolchain
+      # ---------------------------------------------------------------
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
 
+      - name: Setup Python (for node-gyp)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup MSBuild / VS toolchain
+        uses: microsoft/setup-msbuild@v2
+
+      # ---------------------------------------------------------------
+      # 3. Cache Electron + electron-builder
+      # ---------------------------------------------------------------
+      - name: Cache Electron + electron-builder
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.ELECTRON_CACHE }}
+            ${{ env.ELECTRON_BUILDER_CACHE }}
+            ~/.npm
+          key: ${{ runner.os }}-electron-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-electron-
+
+      # ---------------------------------------------------------------
+      # 4. Install dependencies
+      #    NOTE: no --ignore-scripts — we WANT native rebuilds.
+      # ---------------------------------------------------------------
       - name: Install dependencies
-        run: npm install --force --ignore-scripts
-
-      - name: Build Windows installer
-        run: npm run build:win
+        run: npm ci
         env:
-          npm_config_build_from_source: "false"
-          npm_config_arch: "x64"
+          # Prefer prebuilds; only compile from source if none exist
+          npm_config_build_from_source: 'false'
 
-      - name: Upload EXE artifact
+      # ---------------------------------------------------------------
+      # 5. Rebuild native modules for Electron's ABI
+      # ---------------------------------------------------------------
+      - name: Rebuild native modules for Electron
+        run: npx electron-rebuild -f -w better-sqlite3,node-global-key-listener
+        continue-on-error: true
+        # Some optional modules may fail to rebuild — don't block the build.
+
+      # ---------------------------------------------------------------
+      # 6. Type-check
+      # ---------------------------------------------------------------
+      - name: Type-check
+        run: npx tsc --noEmit
+        continue-on-error: true
+
+      # ---------------------------------------------------------------
+      # 7. Webpack production build
+      # ---------------------------------------------------------------
+      - name: Build renderer + main (webpack)
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      # ---------------------------------------------------------------
+      # 8. Package with electron-builder
+      # ---------------------------------------------------------------
+      - name: Package Windows installer
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Code-signing (optional — remove if unsigned)
+          CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+        run: |
+          if [ -n "$CSC_LINK" ]; then
+            echo "==> Building with code-signing"
+          else
+            echo "==> Building UNSIGNED (SmartScreen will warn users)"
+            unset CSC_LINK
+            unset CSC_KEY_PASSWORD
+          fi
+
+          npx electron-builder \
+            --win nsis \
+            --x64 \
+            --publish never \
+            --config electron-builder.yml
+
+      # ---------------------------------------------------------------
+      # 9. Upload artifacts
+      # ---------------------------------------------------------------
+      - name: Upload installer artifacts
         uses: actions/upload-artifact@v4
         with:
           name: jarvis-windows-installer
           path: |
             release/*.exe
             release/*.blockmap
-            release/*.yml
-          if-no-files-found: warn
+            release/latest.yml
+          if-no-files-found: error
           retention-days: 14
+
+      - name: Upload unpacked build (on failure for debugging)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jarvis-windows-unpacked
+          path: release/win-unpacked/
+          retention-days: 3
+
+      # ---------------------------------------------------------------
+      # 10. Optional: publish to GitHub Releases
+      # ---------------------------------------------------------------
+      - name: Publish to GitHub Releases
+        if: ${{ inputs.publish == true }}
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/*.exe
+            release/*.blockmap
+            release/latest.yml
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
