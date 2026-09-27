@@ -31,9 +31,19 @@ module.exports = {
             loader: 'ts-loader',
             options: {
               transpileOnly: true,
+              configFile: false,
               compilerOptions: {
                 module: 'commonjs',
-                target: 'es2020'
+                target: 'es2020',
+                moduleResolution: 'node',
+                esModuleInterop: true,
+                allowSyntheticDefaultImports: true,
+                skipLibCheck: true,
+                resolveJsonModule: true,
+                jsx: 'react',
+                lib: ['ES2020', 'DOM'],
+                types: ['node'],
+                sourceMap: false
               }
             }
           }
@@ -46,7 +56,6 @@ module.exports = {
     ]
   },
   externals: {
-    // Native modules — resolved at runtime, not bundled
     'uiohook-napi': 'commonjs uiohook-napi',
     'typing_monitor': 'commonjs typing_monitor',
     'audio_capture': 'commonjs audio_capture',
@@ -57,7 +66,6 @@ module.exports = {
     'whisper-node-addon': 'commonjs whisper-node-addon',
     'bufferutil': 'commonjs bufferutil',
     'utf-8-validate': 'commonjs utf-8-validate',
-    // Electron built-ins
     'electron': 'commonjs electron',
     'fluent-ffmpeg': 'commonjs fluent-ffmpeg'
   },
