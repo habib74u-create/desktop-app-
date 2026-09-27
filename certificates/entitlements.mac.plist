@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+
+  <!-- ============================================================
+       HARDENED RUNTIME (required for notarization)
+       ============================================================ -->
+
+  <!-- Required for Electron/V8 JIT + WebAssembly -->
+  <key>com.apple.security.cs.allow-jit</key>
+  <true/>
+
+  <!-- Required because Electron uses writable + executable memory -->
+  <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+  <true/>
+
+  <!-- Required so Electron can load its own dylibs that aren't signed
+       with the same Team ID (e.g. ffmpeg, native .node modules) -->
+  <key>com.apple.security.cs.disable-library-validation</key>
+  <true/>
+
+  <!-- Allow DYLD_* environment variables (some native deps need this) -->
+  <key>com.apple.security.cs.allow-dyld-environment-variables</key>
+  <true/>
+
+  <!-- ============================================================
+       HARDWARE / DEVICE ACCESS
+       ============================================================ -->
+
+  <!-- Microphone (dictation / Whisper transcription / push-to-talk) -->
+  <key>com.apple.security.device.audio-input</key>
+  <true/>
+
+  <!-- Camera (only if you ever add video input) -->
+  <!--
+  <key>com.apple.security.device.camera</key>
+  <true/>
+  -->
+
+  <!-- USB / Bluetooth devices (optional, for external mics) -->
+  <!--
+  <key>com.apple.security.device.usb</key>
+  <true/>
+  <key>com.apple.security.device.bluetooth</key>
+  <true/>
+  -->
+
+  <!-- ============================================================
+       FILE & NETWORK ACCESS
+       ============================================================ -->
+
+  <!-- Outbound network: API calls, update checks, telemetry -->
+  <key>com.apple.security.network.client</key>
+  <true/>
+
+  <!-- Inbound network: only needed if you run a local server
+       (your src/server/index.ts Fastify server) -->
+  <key>com.apple.security.network.server</key>
+  <true/>
+
+  <!-- Read files the user explicitly selects (open/save dialogs) -->
+  <key>com.apple.security.files.user-selected.read-write</key>
+  <true/>
+
+  <!-- Persist access to user-selected files across launches -->
+  <key>com.apple.security.files.bookmarks.app-scope</key>
+  <true/>
+
+  <!-- Downloads folder (for model downloads, updates) -->
+  <key>com.apple.security.files.downloads.read-write</key>
+  <true/>
+
+  <!-- ============================================================
+       ACCESSIBILITY & AUTOMATION
+       (Jarvis needs these for universal-key monitoring, paste helper,
+        context detection, and typing monitor)
+       ============================================================ -->
+
+  <!-- Send AppleEvents to control other apps (e.g. paste into frontmost app) -->
+  <key>com.apple.security.automation.apple-events</key>
+  <true/>
+
+  <!-- NOTE: Accessibility permission is granted at RUNTIME by the user
+       in System Settings → Privacy & Security → Accessibility.
+       It cannot be pre-granted via entitlements. Your app must call
+       systemPreferences.isTrustedAccessibilityClient(true) to prompt. -->
+
+  <!-- ============================================================
+       TEMPORARY EXCEPTIONS (only if absolutely necessary)
+       ============================================================ -->
+
+  <!-- DO NOT enable these unless you know why — they weaken security
+       and Apple may reject notarization. -->
+
+  <!--
+  <key>com.apple.security.app-sandbox</key>
+  <false/>
+  -->
+
+  <!--
+  <key>com.apple.security.cs.debugger</key>
+  <true/>
+  -->
+
+</dict>
+</plist>
