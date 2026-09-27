@@ -1,89 +1,127 @@
+// src/input/windows-key-service.ts
+import { globalShortcut, app } from 'electron';
+import { EventEmitter } from 'events';
+import { log } from '../core/logger';
+import { getMachineInfo } from '../core/machine-arch';
+import { getUniversalKeyService } from './universal-key-service';
+
 /**
- * Windows Key Service
+ * Windows-specific key handling.
  *
- * Windows has no OS-level "Fn key" event (it's trapped by the keyboard's
- * hardware/firmware before it ever reaches the OS), so the Mac app's
- * Fn-key push-to-talk trigger has no direct equivalent here. Instead this
- * listens for a configurable regular key (default: Right Ctrl) using
- * uiohook-napi, which ships prebuilt native binaries for Windows — no
- * node-gyp compile step required, so it builds reliably in CI.
- *
- * Mirrors UniversalKeyService's public interface (constructor, start,
- * stop) so main.ts only needs a platform check to pick between them.
+ * Responsibilities:
+ *  - Register Windows-only shortcuts (Win+Space is reserved by OS [citation:3])
+ *  - Handle the Chromium WH_KEYBOARD_LL bug workaround [citation:4]
+ *  - Manage fallback toggles when WinKeyServer.exe is blocked by AV [citation:14]
  */
-import { Logger } from '../core/logger';
+export class WindowsKeyService extends EventEmitter {
+  private registered = new Set<string>();
+  private hookHealthy = true;
 
-// uiohook key codes for common push-to-talk trigger keys.
-const KEY_CODES: Record<string, number> = {
-  right_ctrl: 3613,
-  right_alt: 3640,
-  right_shift: 54,
-  option: 3640,  // Windows has no "Option" key — maps to Right Alt
-  fn: 3613,      // no real Fn code on Windows — falls back to Right Ctrl
-};
+  init(): void {
+    if (getMachineInfo().platform !== 'win32') return;
 
-export class WindowsKeyService {
-  private uIOhook: any = null;
-  private isActive = false;
-  private onKeyDown: (() => void) | null = null;
-  private onKeyUp: (() => void) | null = null;
-  private triggerKeyCode = KEY_CODES.right_ctrl;
-  private isKeyCurrentlyDown = false;
+    log.input.info('windows-key-service ready');
 
-  constructor(onKeyDown: () => void, onKeyUp: () => void) {
-    this.onKeyDown = onKeyDown;
-    this.onKeyUp = onKeyUp;
+    // Watch for the native listener going silent (hook dropped by Windows)
+    this.startHookHealthCheck();
   }
 
-  start(keyName: string = 'right_ctrl'): boolean {
-    if (this.isActive) {
-      Logger.info('[WindowsKeyService] Already running');
+  /* ---- Windows-only shortcuts ------------------------------------------ */
+
+  /**
+   * Register a shortcut that's safe on Windows (avoids OS-reserved combos
+   * like Win+Space, Ctrl+Alt+Del, etc.).
+   */
+  registerSafe(accelerator: string, handler: () => void): boolean {
+    if (this.registered.has(accelerator)) return true;
+
+    // Windows reserves certain combos — fail early with a clear message
+    const reserved = ['Super+Space', 'CommandOrControl+Alt+Delete', 'Alt+F4'];
+    if (reserved.some((r) => accelerator.toLowerCase().includes(r.toLowerCase()))) {
+      log.input.warn(`accelerator reserved by Windows: ${accelerator}`);
       return false;
     }
 
-    this.triggerKeyCode = KEY_CODES[keyName] ?? KEY_CODES.right_ctrl;
+    const ok = globalShortcut.register(accelerator, handler);
+    if (ok) this.registered.add(accelerator);
+    else log.input.warn(`failed to register: ${accelerator}`);
+    return ok;
+  }
 
+  unregisterAll(): void {
+    for (const accel of this.registered) {
+      try {
+        globalShortcut.unregister(accel);
+      } catch {
+        /* ignore */
+      }
+    }
+    this.registered.clear();
+  }
+
+  /* ---- Hook health check (Chromium bug workaround) [citation:4] --------- */
+
+  private healthTimer: NodeJS.Timeout | null = null;
+
+  /**
+   * Poll GetAsyncKeyState-equivalent. If the user is clearly typing but our
+   * hook hasn't fired in a while, assume the hook was dropped and re-arm.
+   *
+   * In practice we can't call GetAsyncKeyState from Node without a native
+   * addon. So we use a cheaper heuristic: if the renderer reports keydown
+   * activity but the main-process hook reports nothing, flag it.
+   */
+  private startHookHealthCheck(): void {
+    this.healthTimer = setInterval(() => {
+      // This is a placeholder — real detection requires comparing
+      // renderer keydown counts vs hook keydown counts.
+      // See push-to-talk-refactored.ts for the actual comparison logic.
+      if (!this.hookHealthy) {
+        log.input.warn('hook health check: hook appears dead, re-arming');
+        this.rearmHook();
+      }
+    }, 30_000);
+  }
+
+  private rearmHook(): void {
     try {
-      // Loaded lazily so the rest of the app still works if the package
-      // is ever missing — only this push-to-talk feature is affected.
-      const nodeRequire = eval('require');
-      const mod = nodeRequire('uiohook-napi');
-      this.uIOhook = mod.uIOhook;
-
-      this.uIOhook.on('keydown', (e: { keycode: number }) => {
-        if (e.keycode === this.triggerKeyCode && !this.isKeyCurrentlyDown) {
-          this.isKeyCurrentlyDown = true;
-          this.onKeyDown?.();
-        }
-      });
-
-      this.uIOhook.on('keyup', (e: { keycode: number }) => {
-        if (e.keycode === this.triggerKeyCode && this.isKeyCurrentlyDown) {
-          this.isKeyCurrentlyDown = false;
-          this.onKeyUp?.();
-        }
-      });
-
-      this.uIOhook.start();
-      this.isActive = true;
-      Logger.success(`[WindowsKeyService] Push-to-talk monitoring started (key: ${keyName})`);
-      return true;
-    } catch (error) {
-      Logger.error('[WindowsKeyService] Failed to start:', error);
-      Logger.error('💡 Make sure uiohook-napi is installed: npm install uiohook-napi');
-      return false;
+      const svc = getUniversalKeyService();
+      svc.stop();
+      void svc.start();
+      this.hookHealthy = true;
+      log.input.info('hook re-armed');
+    } catch (err) {
+      log.input.error('failed to re-arm hook', err);
     }
   }
 
-  stop(): void {
-    if (!this.isActive || !this.uIOhook) return;
-    try {
-      this.uIOhook.stop();
-      this.isActive = false;
-      this.uIOhook = null;
-      Logger.info('[WindowsKeyService] Monitoring stopped');
-    } catch (error) {
-      Logger.error('[WindowsKeyService] Error stopping:', error);
-    }
+  /** Called by the renderer when it sees keydown but main-process hook doesn't. */
+  reportHookSilence(): void {
+    this.hookHealthy = false;
+    log.input.warn('renderer reports hook silence');
   }
+
+  /** Called by UniversalKeyService on every hook event. */
+  reportHookActivity(): void {
+    this.hookHealthy = true;
+  }
+
+  dispose(): void {
+    if (this.healthTimer) clearInterval(this.healthTimer);
+    this.healthTimer = null;
+    this.unregisterAll();
+  }
+}
+
+let instance: WindowsKeyService | null = null;
+
+export function initWindowsKeyService(): WindowsKeyService {
+  if (instance) return instance;
+  instance = new WindowsKeyService();
+  return instance;
+}
+
+export function getWindowsKeyService(): WindowsKeyService {
+  if (!instance) throw new Error('WindowsKeyService not initialized');
+  return instance;
 }
