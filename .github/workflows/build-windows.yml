@@ -14,7 +14,7 @@ jobs:
           node-version: 20
 
       - name: Install dependencies
-        run: npm install
+        run: npm install --force --ignore-scripts
 
       - name: Build Windows installer
         run: npm run build:win
