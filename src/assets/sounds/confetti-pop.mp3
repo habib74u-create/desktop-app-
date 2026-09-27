@@ -1,0 +1,27 @@
+mkdir -p src/assets/sounds
+
+# Confetti pop — 300ms pink-noise burst with decay
+ffmpeg -f lavfi -i "anoisesrc=d=0.3:c=pink:a=0.5" \
+       -af "afade=t=out:st=0.15:d=0.15,volume=0.7" \
+       -b:a 128k src/assets/sounds/confetti-pop.mp3
+
+# Recording start — short high blip
+ffmpeg -f lavfi -i "sine=frequency=880:duration=0.08" \
+       -af "afade=t=out:st=0.04:d=0.04,volume=0.4" \
+       -b:a 128k src/assets/sounds/recording-start.mp3
+
+# Recording stop — short low blip
+ffmpeg -f lavfi -i "sine=frequency=440:duration=0.1" \
+       -af "afade=t=out:st=0.05:d=0.05,volume=0.4" \
+       -b:a 128k src/assets/sounds/recording-stop.mp3
+
+# Error — descending tone
+ffmpeg -f lavfi -i "sine=frequency=600:duration=0.15" \
+       -af "afade=t=out:st=0.1:d=0.05,volume=0.4" \
+       -b:a 128k src/assets/sounds/error.mp3
+
+# Notification — two quick blips
+ffmpeg -f lavfi -i "sine=frequency=660:duration=0.06" \
+       -f lavfi -i "sine=frequency=880:duration=0.06" \
+       -filter_complex "[0][1]concat=n=2:v=0:a=1,volume=0.4" \
+       -b:a 128k src/assets/sounds/notification.mp3
