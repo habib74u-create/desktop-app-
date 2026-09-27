@@ -1,0 +1,104 @@
+# ---- Dependencies ----
+node_modules/
+.pnp
+.pnp.js
+.yarn/
+.yarnrc.yml
+
+# ---- Build output ----
+dist/
+release/
+build/Release/
+build/Debug/
+*.tsbuildinfo
+
+# ---- Logs ----
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ---- Runtime data ----
+pids/
+*.pid
+*.seed
+*.pid.lock
+lib-cov/
+coverage/
+.nyc_output/
+.grunt/
+.lock-wscript/
+.npm/
+.node_repl_history/
+*.tgz
+
+# ---- Environment ----
+.env
+.env.*
+!.env.example
+*.local
+
+# ---- IDE / editors ----
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+.idea/
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
+*~
+
+# ---- OS junk ----
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ---- Electron ----
+out/
+dist_electron/
+.electron-builder-cache/
+.cache/electron/
+.cache/electron-builder/
+
+# ---- Native builds ----
+*.node
+!**/node_modules/**/*.node
+build/
+prebuilds/
+.gyp/
+
+# ---- Staged assets ----
+assets/ffmpeg/_stage/
+
+# ---- Certificates & secrets (NEVER commit) ----
+*.p12
+*.pfx
+*.cer
+*.certSigningRequest
+*.mobileprovision
+*.provisionprofile
+certificates/*.p12
+certificates/*.pfx
+!certificates/entitlements.mac.plist
+!certificates/entitlements.mac.inherit.plist
+
+# ---- Test artifacts ----
+.robustness-tmp/
+test-results/
+playwright-report/
+
+# ---- Misc ----
+.eslintcache
+.stylelintcache
+.parcel-cache
+.turbo/

@@ -1,0 +1,71 @@
+// tsconfig.json
+{
+  "compilerOptions": {
+    /* ---- Language & target ---- */
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+
+    /* ---- Emit ---- */
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "sourceMap": true,
+    "declaration": false,
+    "noEmit": false,
+    "removeComments": false,
+    "importHelpers": false,
+
+    /* ---- Interop ---- */
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true,
+
+    /* ---- Strictness ---- */
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "skipLibCheck": true,
+
+    /* ---- Types ---- */
+    "types": ["node", "electron"],
+
+    /* ---- Paths ---- */
+    "baseUrl": ".",
+    "paths": {
+      "@/*":        ["src/*"],
+      "@core/*":    ["src/core/*"],
+      "@services/*":["src/services/*"],
+      "@ipc/*":     ["src/ipc/*"],
+      "@audio/*":   ["src/audio/*"],
+      "@input/*":   ["src/input/*"],
+      "@utils/*":   ["src/utils/*"],
+      "@renderer/*":["src/renderer/*"]
+    }
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "release",
+    "scripts",
+    "**/*.test.ts",
+    "**/*.test.tsx"
+  ]
+}
