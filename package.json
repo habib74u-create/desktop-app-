@@ -7,6 +7,7 @@
     "dev": "concurrently \"NODE_ENV=development webpack --watch\" \"wait-on dist/main.js && NODE_ENV=development electron .\"",
     "start": "electron .",
     "build": "npm run build:native && npx webpack",
+    "build:web": "npx webpack",
     "server": "tsx src/server/index.ts",
     "build:tsc": "tsc --noEmit",
     "build:native": "node-gyp rebuild",
@@ -30,8 +31,7 @@
     "test:performance": "jest --testPathPatterns=performance",
     "test:robustness": "node scripts/test-robustness.js",
     "test:launch": "node scripts/launch-readiness.js",
-    "install": "node-gyp rebuild",
-    "build:win": "npm run build && electron-builder --win --x64"
+    "build:win": "npm run build:web && electron-builder --win --x64"
   },
   "keywords": [
     "electron",
@@ -115,10 +115,6 @@
       "package.json"
     ],
     "extraResources": [
-      {
-        "from": "dist/jarvis-ai-assistant.node",
-        "to": "jarvis-ai-assistant.node"
-      },
       {
         "from": "assets/jarvis-logo-dark.png",
         "to": "jarvis-logo-dark.png"
