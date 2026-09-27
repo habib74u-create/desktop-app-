@@ -33,14 +33,7 @@
     "test:launch": "node scripts/launch-readiness.js",
     "build:win": "npm run build:web && electron-builder --win --x64"
   },
-  "keywords": [
-    "electron",
-    "ai",
-    "assistant",
-    "dictation",
-    "voice",
-    "mac"
-  ],
+  "keywords": ["electron","ai","assistant","dictation","voice","mac"],
   "author": "Jarvis Team",
   "license": "MIT",
   "devDependencies": {
@@ -106,39 +99,15 @@
   "build": {
     "appId": "com.jarvis.ai-assistant",
     "productName": "Jarvis - AI Assistant",
-    "directories": {
-      "output": "release"
-    },
-    "files": [
-      "dist/**/*",
-      "node_modules/**/*",
-      "package.json"
-    ],
+    "directories": { "output": "release" },
+    "files": ["dist/**/*", "node_modules/**/*", "package.json"],
     "extraResources": [
-      {
-        "from": "assets/jarvis-logo-dark.png",
-        "to": "jarvis-logo-dark.png"
-      },
-      {
-        "from": "assets/jarvis-logo-light.png",
-        "to": "jarvis-logo-light.png"
-      },
-      {
-        "from": "assets/jarvis-logo.png",
-        "to": "jarvis-logo.png"
-      },
-      {
-        "from": "assets/ffmpeg",
-        "to": "ffmpeg"
-      },
-      {
-        "from": "assets/jarvis-menubar-template.png",
-        "to": "jarvis-menubar-template.png"
-      },
-      {
-        "from": "src/assets/sounds/confetti-pop.mp3",
-        "to": "assets/sounds/confetti-pop.mp3"
-      }
+      { "from": "assets/jarvis-logo-dark.png", "to": "jarvis-logo-dark.png" },
+      { "from": "assets/jarvis-logo-light.png", "to": "jarvis-logo-light.png" },
+      { "from": "assets/jarvis-logo.png", "to": "jarvis-logo.png" },
+      { "from": "assets/ffmpeg", "to": "ffmpeg" },
+      { "from": "assets/jarvis-menubar-template.png", "to": "jarvis-menubar-template.png" },
+      { "from": "src/assets/sounds/confetti-pop.mp3", "to": "assets/sounds/confetti-pop.mp3" }
     ],
     "asarUnpack": [
       "node_modules/@electron",
@@ -158,46 +127,20 @@
       "identity": null,
       "type": "distribution",
       "bundleVersion": "0.1.0",
-      "notarize": {
-        "teamId": ""
-      },
+      "notarize": { "teamId": "" },
       "target": [
-        {
-          "target": "dmg",
-          "arch": [
-            "arm64",
-            "x64"
-          ]
-        },
-        {
-          "target": "dir",
-          "arch": [
-            "arm64",
-            "x64"
-          ]
-        }
+        { "target": "dmg", "arch": ["arm64", "x64"] },
+        { "target": "dir", "arch": ["arm64", "x64"] }
       ],
       "extendInfo": {
         "NSMicrophoneUsageDescription": "Jarvis needs microphone access for voice dictation and AI assistance",
         "NSScreenCaptureDescription": "Jarvis needs screen capture permission for AI assistance features"
       },
       "extraResources": [
-        {
-          "from": "build/Release/universal_key_monitor.node",
-          "to": "universal_key_monitor.node"
-        },
-        {
-          "from": "build/Release/fn_key_monitor.node",
-          "to": "fn_key_monitor.node"
-        },
-        {
-          "from": "build/Release/audio_capture.node",
-          "to": "audio_capture.node"
-        },
-        {
-          "from": "build/Release/typing_monitor.node",
-          "to": "typing_monitor.node"
-        }
+        { "from": "build/Release/universal_key_monitor.node", "to": "universal_key_monitor.node" },
+        { "from": "build/Release/fn_key_monitor.node", "to": "fn_key_monitor.node" },
+        { "from": "build/Release/audio_capture.node", "to": "audio_capture.node" },
+        { "from": "build/Release/typing_monitor.node", "to": "typing_monitor.node" }
       ]
     },
     "dmg": {
@@ -207,34 +150,15 @@
       "format": "UDZO",
       "writeUpdateInfo": false,
       "artifactName": "${productName}-${version}-${arch}.${ext}",
-      "window": {
-        "width": 600,
-        "height": 400
-      },
+      "window": { "width": 600, "height": 400 },
       "contents": [
-        {
-          "x": 150,
-          "y": 200,
-          "type": "file"
-        },
-        {
-          "x": 450,
-          "y": 200,
-          "type": "link",
-          "path": "/Applications"
-        }
+        { "x": 150, "y": 200, "type": "file" },
+        { "x": 450, "y": 200, "type": "link", "path": "/Applications" }
       ]
     },
     "afterSign": "scripts/after-sign.js",
     "afterPack": "scripts/after-pack.js",
-    "protocols": [
-      {
-        "name": "Jarvis Protocol",
-        "schemes": [
-          "jarvis"
-        ]
-      }
-    ],
+    "protocols": [{ "name": "Jarvis Protocol", "schemes": ["jarvis"] }],
     "publish": {
       "provider": "github",
       "owner": "",
@@ -243,14 +167,7 @@
     },
     "win": {
       "icon": "assets/icon.png",
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        }
-      ]
+      "target": [{ "target": "nsis", "arch": ["x64"] }]
     },
     "nsis": {
       "oneClick": false,
@@ -259,15 +176,7 @@
     }
   },
   "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+    "production": [">0.2%", "not dead", "not op_mini all"],
+    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
   }
 }
